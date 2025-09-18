@@ -1,1 +1,85 @@
+<script>
+    // ... الكود السابق لإنشاء الجداول والألوان وكل شيء آخر ...
+
+    // --- كود جديد لإرسال الصوت إلى الخادم ---
+
+    let mediaRecorder;
+    let audioChunks = [];
+
+    const voiceBtn = document.getElementById('voiceBtn');
+    const voiceStatus = document.getElementById('voiceStatus');
+    const transcribedTextElement = document.getElementById('transcribedText');
+    let isListening = false;
+    let currentField = null;
+
+    voiceBtn.addEventListener('click', () => {
+        if (isListening) {
+            stopRecording();
+        } else {
+            startRecording();
+        }
+    });
+
+    function startRecording() {
+        navigator.mediaDevices.getUserMedia({ audio: true })
+            .then(stream => {
+                isListening = true;
+                voiceBtn.classList.add('active');
+                voiceBtn.innerHTML = '<i class="fas fa-stop-circle"></i> إيقاف التسجيل';
+                voiceStatus.textContent = 'أنا أستمع...';
+
+                mediaRecorder = new MediaRecorder(stream);
+                mediaRecorder.start();
+
+                mediaRecorder.addEventListener("start", () => {
+                    audioChunks = [];
+                });
+
+                mediaRecorder.addEventListener("dataavailable", event => {
+                    audioChunks.push(event.data);
+                });
+
+                mediaRecorder.addEventListener("stop", () => {
+                    const audioBlob = new Blob(audioChunks, { 'type': 'audio/mp3' });
+                    sendAudioToServer(audioBlob);
+                });
+            });
+    }
+
+    function stopRecording() {
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+            mediaRecorder.stop();
+        }
+        isListening = false;
+        voiceBtn.classList.remove('active');
+        voiceBtn.innerHTML = '<i class="fas fa-microphone"></i> إنشاء جدول بالصوت';
+        voiceStatus.textContent = 'انتهى التسجيل، جارٍ المعالجة...';
+    }
+
+    async function sendAudioToServer(audioBlob) {
+        const formData = new FormData();
+        formData.append("file", audioBlob, "audio.mp3");
+
+        try {
+            const response = await fetch('/api/transcribe', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!response.ok) {
+                throw new Error('حدث خطأ في الخادم.');
+            }
+
+            const data = await response.json();
+            const transcript = data.text;
+            transcribedTextElement.textContent = `تم التعرف على: "${transcript}"`;
+            processNaturalVoiceInput(transcript); // استخدم وظيفتك القديمة لتحليل النص
+        } catch (error) {
+            console.error('Error:', error);
+            voiceStatus.textContent = 'حدث خطأ أثناء معالجة الصوت.';
+        }
+    }
+
+    // ... الكود المتبقي في index.html ...
+</script>
 
