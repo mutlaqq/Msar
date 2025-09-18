@@ -1,85 +1,1154 @@
-<script>
-    // ... الكود السابق لإنشاء الجداول والألوان وكل شيء آخر ...
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مسار - لمعالجة النصوص وتحريرها</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <style>
+        /* General Styles */
+        :root {
+            --bg-color-dark: #000;
+            --text-color-dark: #ffbe56;
+            --container-bg-dark: #1a1a1a;
+            --btn-bg-dark: #ffbe56;
+            --btn-text-dark: #000;
+            --btn-hover-bg-dark: #e6a74b;
 
-    // --- كود جديد لإرسال الصوت إلى الخادم ---
-
-    let mediaRecorder;
-    let audioChunks = [];
-
-    const voiceBtn = document.getElementById('voiceBtn');
-    const voiceStatus = document.getElementById('voiceStatus');
-    const transcribedTextElement = document.getElementById('transcribedText');
-    let isListening = false;
-    let currentField = null;
-
-    voiceBtn.addEventListener('click', () => {
-        if (isListening) {
-            stopRecording();
-        } else {
-            startRecording();
+            --bg-color-light: #f0f0f0;
+            --text-color-light: #000;
+            --container-bg-light: #fff;
+            --btn-bg-light: #000;
+            --btn-text-light: #fff;
+            --btn-hover-bg-light: #333;
         }
-    });
 
-    function startRecording() {
-        navigator.mediaDevices.getUserMedia({ audio: true })
-            .then(stream => {
-                isListening = true;
-                voiceBtn.classList.add('active');
-                voiceBtn.innerHTML = '<i class="fas fa-stop-circle"></i> إيقاف التسجيل';
-                voiceStatus.textContent = 'أنا أستمع...';
-
-                mediaRecorder = new MediaRecorder(stream);
-                mediaRecorder.start();
-
-                mediaRecorder.addEventListener("start", () => {
-                    audioChunks = [];
-                });
-
-                mediaRecorder.addEventListener("dataavailable", event => {
-                    audioChunks.push(event.data);
-                });
-
-                mediaRecorder.addEventListener("stop", () => {
-                    const audioBlob = new Blob(audioChunks, { 'type': 'audio/mp3' });
-                    sendAudioToServer(audioBlob);
-                });
-            });
-    }
-
-    function stopRecording() {
-        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-            mediaRecorder.stop();
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background-color: var(--bg-color-light);
+            color: var(--text-color-light);
+            margin: 0;
+            padding: 20px 20px 80px 20px;
+            direction: rtl;
+            text-align: right;
+            line-height: 1.6;
+            transition: background-color 0.5s, color 0.5s;
         }
-        isListening = false;
-        voiceBtn.classList.remove('active');
-        voiceBtn.innerHTML = '<i class="fas fa-microphone"></i> إنشاء جدول بالصوت';
-        voiceStatus.textContent = 'انتهى التسجيل، جارٍ المعالجة...';
-    }
+        
+        body.dark-theme {
+            background-color: var(--bg-color-dark);
+            color: var(--text-color-dark);
+        }
 
-    async function sendAudioToServer(audioBlob) {
-        const formData = new FormData();
-        formData.append("file", audioBlob, "audio.mp3");
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background-color: var(--container-bg-light);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.5s, box-shadow 0.5s;
+        }
 
-        try {
-            const response = await fetch('/api/transcribe', {
-                method: 'POST',
-                body: formData,
-            });
+        .dark-theme .container {
+            background-color: var(--container-bg-dark);
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
+        }
 
-            if (!response.ok) {
-                throw new Error('حدث خطأ في الخادم.');
+        h1 {
+            color: var(--text-color-light);
+            text-align: center;
+            font-weight: 700;
+        }
+        
+        .dark-theme h1 {
+            color: var(--text-color-dark);
+        }
+        
+        h2 {
+            color: var(--text-color-light);
+        }
+        
+        .dark-theme h2 {
+            color: var(--text-color-dark);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Header and Logo */
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .logo {
+            width: 150px;
+            max-width: 100%;
+            height: auto;
+        }
+
+        .theme-toggle-container {
+            position: absolute;
+            top: 0;
+            left: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .theme-toggle {
+            background: none;
+            border: none;
+            color: var(--text-color-light);
+            font-size: 1.5em;
+            cursor: pointer;
+        }
+        
+        .dark-theme .theme-toggle {
+            color: var(--text-color-dark);
+        }
+        
+        .theme-text {
+            font-size: 0.8em;
+            color: #555;
+            margin-top: 5px;
+        }
+
+        .dark-theme .theme-text {
+            color: #aaa;
+        }
+
+        /* Bottom Navigation Bar */
+        .navbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-around;
+            background-color: #fff;
+            border-top: 1px solid #ddd;
+            padding: 10px 0;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+        
+        .dark-theme .navbar {
+            background-color: #1a1a1a;
+            border-top: 1px solid #333;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .nav-btn {
+            background: none;
+            border: none;
+            color: var(--text-color-light);
+            font-family: 'Tajawal', sans-serif;
+            font-weight: 700;
+            font-size: 0.8em;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            transition: color 0.3s;
+        }
+        
+        .nav-btn i {
+            font-size: 1.2em;
+        }
+        
+        .nav-btn:hover, .nav-btn.active {
+            color: var(--btn-bg-light);
+        }
+        
+        .dark-theme .nav-btn {
+            color: var(--text-color-dark);
+        }
+        
+        .dark-theme .nav-btn:hover, .dark-theme .nav-btn.active {
+            color: var(--btn-bg-dark);
+        }
+
+        /* Content Sections */
+        .section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .dark-theme .section {
+            border-bottom: 1px solid #333;
+        }
+
+        /* Inputs */
+        input[type="text"], input[type="date"] {
+            width: 100%;
+            padding: 10px;
+            background-color: #eee;
+            border: 1px solid #ccc;
+            color: #000;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-family: 'Tajawal', sans-serif;
+            font-size: 1em;
+            transition: background-color 0.5s, color 0.5s, border-color 0.5s;
+        }
+        
+        .dark-theme input[type="text"], .dark-theme input[type="date"] {
+            background-color: #222;
+            border: 1px solid #333;
+            color: #ffbe56;
+        }
+
+        select {
+            width: 100%;
+            padding: 10px;
+            background-color: #eee;
+            border: 1px solid #ccc;
+            color: #000;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-family: 'Tajawal', sans-serif;
+            font-size: 1em;
+            transition: background-color 0.5s, color 0.5s, border-color 0.5s;
+            appearance: none;
+            background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23000"><path d="M7 10l5 5 5-5z"/></svg>');
+            background-repeat: no-repeat;
+            background-position: left 10px center;
+            background-size: 20px;
+            padding-left: 40px;
+        }
+        .dark-theme select {
+             background-color: #222;
+             border: 1px solid #333;
+             color: #ffbe56;
+             background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23ffbe56"><path d="M7 10l5 5 5-5z"/></svg>');
+        }
+        
+        /* Buttons */
+        .btn {
+            background-color: var(--btn-bg-light);
+            color: var(--btn-text-light);
+            padding: 12px 20px;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-family: 'Tajawal', sans-serif;
+            font-weight: 700;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:hover {
+            background-color: var(--btn-hover-bg-light);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+        }
+        
+        .dark-theme .btn {
+            background-color: var(--btn-bg-dark);
+            color: var(--btn-text-dark);
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+        }
+        
+        .dark-theme .btn:hover {
+            background-color: var(--btn-hover-bg-dark);
+            box-shadow: 0 6px 20px rgba(255, 215, 0, 0.6);
+        }
+
+        /* Voice Button */
+        .btn-voice, .btn-field-voice {
+            background-color: #ff5e57;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-family: 'Tajawal', sans-serif;
+            font-weight: 700;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 94, 87, 0.4);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: center;
+            flex-grow: 1;
+        }
+        
+        .btn-field-voice {
+            padding: 8px 12px;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            flex-grow: 0;
+            flex-shrink: 0;
+            box-shadow: none;
+        }
+        
+        .btn-field-voice:hover {
+            background-color: #e65651;
+            transform: translateY(-2px);
+            box-shadow: 0 3px 8px rgba(255, 94, 87, 0.4);
+        }
+        
+        .btn-voice:hover, .btn-field-voice:hover {
+            background-color: #e65651;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(255, 94, 87, 0.6);
+        }
+        
+        .btn-voice.active, .btn-field-voice.active {
+            background-color: #e65651;
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 94, 87, 0.7); }
+            70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(255, 94, 87, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 94, 87, 0); }
+        }
+
+        #voiceStatus {
+            text-align: center;
+            font-weight: bold;
+            margin-top: 10px;
+            color: #00b894;
+        }
+        .dark-theme #voiceStatus {
+            color: #ffbe56;
+        }
+        
+        #transcribedText {
+            text-align: center;
+            color: #555;
+            margin-top: 5px;
+            font-size: 0.9em;
+        }
+        .dark-theme #transcribedText {
+            color: #aaa;
+        }
+
+        /* Plus Button */
+        .add-btn, .remove-btn {
+            background-color: #00b894;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            width: 35px;
+            height: 35px;
+            cursor: pointer;
+            font-size: 1.5em;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        
+        .remove-btn {
+            background-color: #d63031;
+        }
+        
+        .remove-btn:hover {
+            background-color: #c02626;
+        }
+
+        .add-btn:hover {
+            background-color: #008f73;
+        }
+
+        /* Form Layout */
+        .input-group {
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        
+        .dark-theme .input-group {
+            border: 1px solid #333;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+        
+        .input-group-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .input-group-header h2 {
+            margin: 0;
+        }
+        
+        .title-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .input-with-button {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .input-with-button:last-child {
+            margin-bottom: 0;
+        }
+        
+        .input-with-button input {
+            flex-grow: 1;
+            margin-bottom: 0;
+        }
+
+        .field-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+        }
+        
+        /* Table View */
+        .table-view {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+
+        #outputTable {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9em;
+            text-align: right;
+            transition: background-color 0.5s, color 0.5s;
+        }
+        
+        #outputTable th, #outputTable td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            transition: border-color 0.5s, background-color 0.5s, color 0.5s;
+        }
+        
+        .dark-theme #outputTable th, .dark-theme #outputTable td {
+            border: 1px solid #444;
+        }
+
+        .tutorial-box {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .dark-theme .tutorial-box {
+            background-color: #222;
+        }
+        
+        .tutorial-box h3 {
+            margin-top: 0;
+        }
+        
+        .tutorial-box ol {
+            padding-right: 20px;
+            margin: 0;
+        }
+        
+        .tutorial-box li {
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+        .tutorial-box li strong {
+            color: #d63031;
+        }
+
+        .button-group-voice {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+            gap: 10px;
+        }
+        .button-group-voice .btn {
+            flex-grow: 1;
+        }
+
+        .color-picker-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .color-picker-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .color-picker-preview {
+            width: 20px;
+            height: 20px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        
+        .model-options {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .dark-theme .model-options {
+            background-color: #222;
+        }
+        .model-options h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+        .model-btn-group {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .model-btn {
+            background-color: #0984e3;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-family: 'Tajawal', sans-serif;
+            transition: background-color 0.3s;
+        }
+        .model-btn:hover {
+            background-color: #066ecf;
+        }
+
+
+        /* Mobile Adjustments */
+        @media (max-width: 600px) {
+            body {
+                padding: 10px 10px 80px 10px;
             }
 
-            const data = await response.json();
-            const transcript = data.text;
-            transcribedTextElement.textContent = `تم التعرف على: "${transcript}"`;
-            processNaturalVoiceInput(transcript); // استخدم وظيفتك القديمة لتحليل النص
-        } catch (error) {
-            console.error('Error:', error);
-            voiceStatus.textContent = 'حدث خطأ أثناء معالجة الصوت.';
+            .container {
+                padding: 15px;
+            }
+
+            .navbar {
+                padding: 10px 5px;
+            }
+            .button-group-voice {
+                flex-direction: column;
+            }
         }
-    }
+    </style>
+</head>
+<body>
 
-    // ... الكود المتبقي في index.html ...
-</script>
+    <div class="header">
+        <img id="logo" src="https://a.top4top.io/p_3548d4dxt0.png" alt="شعار مسار" class="logo">
+        <div class="theme-toggle-container">
+            <button id="themeToggle" class="theme-toggle">
+                <i class="fas fa-moon"></i>
+            </button>
+            <span class="theme-text">تغيير ثيم ✨</span>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div id="home-section" class="content-section">
+            <h2 class="section-title">مرحباً بك في مسار! ✒️</h2>
+            <p><strong>مسار</strong> هو منصتك الاحترافية لإنشاء وإدارة الجداول وكشوفات البيانات بسهولة وفعالية. صُممت المنصة لتكون سريعة وذكية، مما يتيح لك إدخال البيانات وترتيبها تلقائيًا، مع إمكانية طباعتها وحفظها بصيغة PDF أو كصورة.</p>
+            <h3>مميزات المنصة:</h3>
+            <ul>
+                <li>📊 <strong>إنشاء جداول ذكية:</strong> أدخل البيانات بشكل بسيط وسنقوم بترتيبها في جدول منسق تلقائيًا.</li>
+                <li>🎨 <strong>تخصيص كامل:</strong> تحكم في ألوان الجداول والنصوص لتناسب ذوقك واحتياجاتك.</li>
+                <li>📱 <strong>متوافق مع الهاتف:</strong> واجهة مصممة خصيصًا لتوفير أفضل تجربة على هاتفك المحمول.</li>
+                <li>📄 <strong>حفظ وطباعة:</strong> احفظ جداولك كصورة أو ملف PDF بجودة عالية.</li>
+            </ul>
+        </div>
 
+        <div id="create-section" class="content-section hidden">
+            <div class="input-group-header">
+                <h2 class="section-title">إنشاء الجداول 📊</h2>
+                <div class="color-picker-item">
+                    <input type="color" id="tableTitleColor" class="color-picker" value="#000000" onchange="applyTitleColor()">
+                </div>
+            </div>
+            
+            <div class="tutorial-box">
+                <h3 style="color: #000; text-align: center;">كيف يعمل النظام؟ ✒️</h3>
+                <ol>
+                    <li>**لإدخال البيانات يدويًا:**
+                        أدخل عنوان الجدول وعدد الأعمدة من القائمة. ثم قم بتعبئة البيانات.
+                    </li>
+                    <li>**لإنشاء جدول بالصوت (النمط الذكي):**
+                        **اضغط على زر الميكروفون العام**، ثم قم بوصف الجدول الذي تريده.
+                        **مثال:** "جدول قائمة الحضور، الاسم، الحالة، والتاريخ. علي حاضر، فهد غائب، اليوم."
+                        - سيفهم النظام أن العنوان هو "قائمة الحضور".
+                        - وأن الأعمدة هي "الاسم"، "الحالة"، "التاريخ".
+                        - وسيقوم بتعبئة البيانات: (علي، حاضر، اليوم)، (فهد، غائب، اليوم).
+                    </li>
+                    <li>**للتعبئة الصوتية لحقل معين:**
+                        **اضغط على زر الميكروفون بجانب الحقل**، ثم قل القيمة المراد إدخالها.
+                    </li>
+                </ol>
+            </div>
+            
+            <div class="input-group">
+                <label for="tableTitleInput">عنوان الجدول:</label>
+                <div class="field-group">
+                    <input type="text" id="tableTitleInput" placeholder="مثال: كشف أسماء الطلاب">
+                    <button class="btn-field-voice" onclick="startFieldVoiceInput('tableTitleInput')"><i class="fas fa-microphone"></i></button>
+                </div>
+            </div>
+            
+            <div class="input-group">
+                <label for="columnCountSelect">عدد الأعمدة:</label>
+                <select id="columnCountSelect" onchange="generateColumnHeaders()">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3" selected>3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                    <option value="7">7</option>
+                    <option value="8">8</option>
+                    <option value="9">9</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label>رؤوس الأعمدة:</label>
+                <div id="columnHeadersContainer">
+                    </div>
+            </div>
+
+            <div class="input-group">
+                <label>إدخال البيانات:</label>
+                <div id="dataEntryForm">
+                    <div class="input-with-button">
+                        <div class="field-group">
+                            <input type="text" class="data-cell" placeholder="بيانات 1">
+                            <button class="btn-field-voice" onclick="startFieldVoiceInput(this)"><i class="fas fa-microphone"></i></button>
+                        </div>
+                        <div class="field-group">
+                            <input type="text" class="data-cell" placeholder="بيانات 2">
+                            <button class="btn-field-voice" onclick="startFieldVoiceInput(this)"><i class="fas fa-microphone"></i></button>
+                        </div>
+                        <div class="field-group">
+                            <input type="text" class="data-cell" placeholder="بيانات 3">
+                            <button class="btn-field-voice" onclick="startFieldVoiceInput(this)"><i class="fas fa-microphone"></i></button>
+                        </div>
+                        <button class="remove-btn" onclick="removeRow(this)"><i class="fas fa-minus"></i></button>
+                    </div>
+                </div>
+                <button class="add-btn" onclick="addRow()"><i class="fas fa-plus"></i></button>
+            </div>
+
+            <div class="button-group-voice">
+                <button class="btn btn-voice" id="voiceBtn"><i class="fas fa-microphone"></i> إنشاء جدول بالصوت</button>
+                <button class="btn" onclick="createTable()"><i class="fas fa-table"></i> إنشاء الجدول يدوياً</button>
+            </div>
+            <p id="voiceStatus" style="display: none;">أنا أستمع...</p>
+            <p id="transcribedText" style="display: none;"></p>
+        </div>
+        
+        <div id="view-section" class="content-section hidden">
+            <h2 class="section-title">الجدول النهائي 📈</h2>
+            <div class="table-view">
+                <h3 id="outputTitle"></h3>
+                <div id="tableContainer">
+                    <table id="outputTable">
+                    </table>
+                </div>
+            </div>
+            <div class="button-group-voice" style="margin-top: 20px;">
+                <button class="btn" onclick="captureAndSave()"><i class="fas fa-image"></i> حفظ كصورة</button>
+                <button class="btn" onclick="printToPDF()"><i class="fas fa-file-pdf"></i> حفظ كـ PDF</button>
+            </div>
+        </div>
+
+        <div id="settings-section" class="content-section hidden">
+            <h2 class="section-title">الإعدادات ⚙️</h2>
+            <div class="color-picker-group">
+                <div class="color-picker-item">
+                    <label for="tableBorderColor">لون حدود الجدول:</label>
+                    <input type="color" id="tableBorderColor" class="color-picker" value="#cccccc" onchange="applyTableTheme()">
+                </div>
+                <div class="color-picker-item">
+                    <label for="headerBgColor">لون رأس الجدول:</label>
+                    <input type="color" id="headerBgColor" class="color-picker" value="#f2f2f2" onchange="applyTableTheme()">
+                </div>
+                <div class="color-picker-item">
+                    <label for="headerTextColor">لون نص رأس الجدول:</label>
+                    <input type="color" id="headerTextColor" class="color-picker" value="#000000" onchange="applyTableTheme()">
+                </div>
+                <div class="color-picker-item">
+                    <label for="rowOddBgColor">لون الصفوف الفردية:</label>
+                    <input type="color" id="rowOddBgColor" class="color-picker" value="#ffffff" onchange="applyTableTheme()">
+                </div>
+                <div class="color-picker-item">
+                    <label for="rowEvenBgColor">لون الصفوف الزوجية:</label>
+                    <input type="color" id="rowEvenBgColor" class="color-picker" value="#f9f9f9" onchange="applyTableTheme()">
+                </div>
+                <div class="color-picker-item">
+                    <label for="rowTextColor">لون نص البيانات:</label>
+                    <input type="color" id="rowTextColor" class="color-picker" value="#000000" onchange="applyTableTheme()">
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="navbar">
+        <button id="homeBtn" class="nav-btn active" onclick="showSection('home')">
+            <i class="fas fa-home"></i>
+            <span>الرئيسية</span>
+        </button>
+        <button id="createBtn" class="nav-btn" onclick="showSection('create')">
+            <i class="fas fa-plus-circle"></i>
+            <span>إنشاء</span>
+        </button>
+        <button id="viewBtn" class="nav-btn" onclick="showSection('view')">
+            <i class="fas fa-eye"></i>
+            <span>الجدول</span>
+        </button>
+        <button id="settingsBtn" class="nav-btn" onclick="showSection('settings')">
+            <i class="fas fa-cog"></i>
+            <span>إعدادات</span>
+        </button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <script>
+        // DOM Elements
+        const themeToggle = document.getElementById('themeToggle');
+        const body = document.body;
+        const navButtons = document.querySelectorAll('.nav-btn');
+        const sections = document.querySelectorAll('.content-section');
+        const columnHeadersContainer = document.getElementById('columnHeadersContainer');
+        const dataEntryForm = document.getElementById('dataEntryForm');
+        const outputTable = document.getElementById('outputTable');
+        const outputTitle = document.getElementById('outputTitle');
+
+        let tableData = {
+            title: '',
+            headers: [],
+            rows: []
+        };
+        
+        // --- Theme Toggle ---
+        themeToggle.addEventListener('click', () => {
+            body.classList.toggle('dark-theme');
+            const icon = themeToggle.querySelector('i');
+            if (body.classList.contains('dark-theme')) {
+                icon.classList.remove('fa-moon');
+                icon.classList.add('fa-sun');
+            } else {
+                icon.classList.remove('fa-sun');
+                icon.classList.add('fa-moon');
+            }
+        });
+
+        // --- Navigation ---
+        function showSection(sectionId) {
+            sections.forEach(section => {
+                section.classList.add('hidden');
+            });
+            document.getElementById(`${sectionId}-section`).classList.remove('hidden');
+            
+            navButtons.forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.getElementById(`${sectionId}Btn`).classList.add('active');
+            
+            // Show/hide voice button based on section
+            const voiceBtn = document.getElementById('voiceBtn');
+            if (sectionId === 'create') {
+                voiceBtn.style.display = 'flex';
+            } else {
+                voiceBtn.style.display = 'none';
+            }
+        }
+        showSection('home');
+        
+        // --- Table Creation ---
+        function generateColumnHeaders() {
+            const count = document.getElementById('columnCountSelect').value;
+            columnHeadersContainer.innerHTML = '';
+            for (let i = 0; i < count; i++) {
+                const headerGroup = document.createElement('div');
+                headerGroup.classList.add('field-group');
+                const headerInput = document.createElement('input');
+                headerInput.type = 'text';
+                headerInput.classList.add('column-header');
+                headerInput.placeholder = `عنوان العمود ${i + 1}`;
+                const voiceBtnField = document.createElement('button');
+                voiceBtnField.classList.add('btn-field-voice');
+                voiceBtnField.innerHTML = '<i class="fas fa-microphone"></i>';
+                voiceBtnField.onclick = () => startFieldVoiceInput(headerInput);
+                
+                headerGroup.appendChild(headerInput);
+                headerGroup.appendChild(voiceBtnField);
+                columnHeadersContainer.appendChild(headerGroup);
+            }
+        }
+        
+        function addRow() {
+            const count = document.getElementById('columnCountSelect').value;
+            const newRow = document.createElement('div');
+            newRow.classList.add('input-with-button');
+            for (let i = 0; i < count; i++) {
+                const fieldGroup = document.createElement('div');
+                fieldGroup.classList.add('field-group');
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.classList.add('data-cell');
+                input.placeholder = `بيانات ${i + 1}`;
+                const voiceBtnField = document.createElement('button');
+                voiceBtnField.classList.add('btn-field-voice');
+                voiceBtnField.innerHTML = '<i class="fas fa-microphone"></i>';
+                voiceBtnField.onclick = () => startFieldVoiceInput(input);
+                
+                fieldGroup.appendChild(input);
+                fieldGroup.appendChild(voiceBtnField);
+                newRow.appendChild(fieldGroup);
+            }
+            const removeBtn = document.createElement('button');
+            removeBtn.classList.add('remove-btn');
+            removeBtn.innerHTML = '<i class="fas fa-minus"></i>';
+            removeBtn.onclick = () => removeRow(removeBtn);
+            newRow.appendChild(removeBtn);
+            
+            dataEntryForm.appendChild(newRow);
+        }
+        
+        function removeRow(button) {
+            button.closest('.input-with-button').remove();
+        }
+
+        function createTable() {
+            tableData.title = document.getElementById('tableTitleInput').value || 'جدول البيانات';
+            tableData.headers = Array.from(document.querySelectorAll('#columnHeadersContainer .column-header')).map(input => input.value || '');
+            tableData.rows = [];
+
+            const dataRows = document.querySelectorAll('#dataEntryForm .input-with-button');
+            dataRows.forEach(row => {
+                const rowData = Array.from(row.querySelectorAll('.data-cell')).map(input => input.value || '');
+                tableData.rows.push(rowData);
+            });
+
+            renderTable();
+            showSection('view');
+        }
+
+        function renderTable() {
+            if (!outputTable) return;
+            outputTable.innerHTML = '';
+            
+            if (tableData.headers.length === 0 && tableData.rows.length === 0) {
+                outputTable.innerHTML = '<caption>لا توجد بيانات للعرض.</caption>';
+                return;
+            }
+
+            outputTitle.textContent = tableData.title;
+
+            // Create table headers
+            const headerRow = outputTable.createTHead().insertRow(0);
+            tableData.headers.forEach(headerText => {
+                const th = document.createElement('th');
+                th.textContent = headerText;
+                headerRow.appendChild(th);
+            });
+
+            // Create table body
+            const tbody = outputTable.createTBody();
+            tableData.rows.forEach(rowData => {
+                const tr = tbody.insertRow();
+                rowData.forEach(cellData => {
+                    const td = tr.insertCell();
+                    td.textContent = cellData;
+                });
+            });
+            
+            applyTableTheme();
+        }
+        
+        // --- Table Theme & Colors ---
+        function applyTableTheme() {
+            const table = document.getElementById('outputTable');
+            if (!table) return;
+
+            const borderColor = document.getElementById('tableBorderColor').value;
+            const headerBgColor = document.getElementById('headerBgColor').value;
+            const headerTextColor = document.getElementById('headerTextColor').value;
+            const rowOddBgColor = document.getElementById('rowOddBgColor').value;
+            const rowEvenBgColor = document.getElementById('rowEvenBgColor').value;
+            const rowTextColor = document.getElementById('rowTextColor').value;
+            const tableTitleColor = document.getElementById('tableTitleColor').value;
+
+            // Apply to table and cells
+            Array.from(table.querySelectorAll('th, td')).forEach(cell => {
+                cell.style.borderColor = borderColor;
+                cell.style.color = rowTextColor;
+            });
+            
+            // Apply to header
+            Array.from(table.querySelectorAll('th')).forEach(header => {
+                header.style.backgroundColor = headerBgColor;
+                header.style.color = headerTextColor;
+            });
+
+            // Apply to rows
+            Array.from(table.querySelectorAll('tbody tr')).forEach((row, index) => {
+                row.style.backgroundColor = (index % 2 === 0) ? rowOddBgColor : rowEvenBgColor;
+            });
+
+            // Apply to title
+            outputTitle.style.color = tableTitleColor;
+        }
+
+        function applyTitleColor() {
+            outputTitle.style.color = document.getElementById('tableTitleColor').value;
+        }
+
+        // --- Save and Print Functions ---
+        function captureAndSave() {
+            html2canvas(document.getElementById('tableContainer')).then(canvas => {
+                const link = document.createElement('a');
+                link.href = canvas.toDataURL('image/png');
+                link.download = 'جدول-مسار.png';
+                link.click();
+            });
+        }
+
+        function printToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            const element = document.getElementById('tableContainer');
+            
+            doc.html(element, {
+                callback: function (doc) {
+                    doc.save('جدول-مسار.pdf');
+                },
+                x: 15,
+                y: 15,
+                html2canvas: {
+                    scale: 0.8
+                }
+            });
+        }
+
+        // --- Voice Input (UPDATED FOR VERCEL FUNCTION) ---
+        let mediaRecorder;
+        let audioChunks = [];
+        const voiceBtn = document.getElementById('voiceBtn');
+        const voiceStatus = document.getElementById('voiceStatus');
+        const transcribedTextElement = document.getElementById('transcribedText');
+        let isListening = false;
+        let currentField = null;
+
+        voiceBtn.addEventListener('click', () => {
+            if (isListening) {
+                stopRecording();
+            } else {
+                startRecording();
+            }
+        });
+
+        function startRecording() {
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(stream => {
+                    isListening = true;
+                    voiceBtn.classList.add('active');
+                    voiceBtn.innerHTML = '<i class="fas fa-stop-circle"></i> إيقاف التسجيل';
+                    voiceStatus.textContent = 'أنا أستمع...';
+                    voiceStatus.style.display = 'block';
+                    transcribedTextElement.style.display = 'none';
+
+                    mediaRecorder = new MediaRecorder(stream);
+                    mediaRecorder.start();
+
+                    mediaRecorder.addEventListener("start", () => {
+                        audioChunks = [];
+                    });
+
+                    mediaRecorder.addEventListener("dataavailable", event => {
+                        audioChunks.push(event.data);
+                    });
+
+                    mediaRecorder.addEventListener("stop", () => {
+                        const audioBlob = new Blob(audioChunks, { 'type': 'audio/mp3' });
+                        sendAudioToServer(audioBlob);
+                    });
+                })
+                .catch(err => {
+                    console.error('Error accessing microphone:', err);
+                    voiceStatus.textContent = 'الرجاء السماح بالوصول للميكروفون.';
+                    voiceStatus.style.display = 'block';
+                });
+        }
+
+        function stopRecording() {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+            }
+            isListening = false;
+            voiceBtn.classList.remove('active');
+            voiceBtn.innerHTML = '<i class="fas fa-microphone"></i> إنشاء جدول بالصوت';
+            voiceStatus.textContent = 'انتهى التسجيل، جارٍ المعالجة...';
+        }
+
+        function startFieldVoiceInput(element) {
+            currentField = element;
+            voiceBtn.click(); // Trigger the main voice button
+        }
+
+        async function sendAudioToServer(audioBlob) {
+            const formData = new FormData();
+            formData.append("file", audioBlob, "audio.mp3");
+
+            try {
+                const response = await fetch('/api/transcribe', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'حدث خطأ في الخادم.');
+                }
+
+                const data = await response.json();
+                const transcript = data.text;
+                transcribedTextElement.textContent = `تم التعرف على: "${transcript}"`;
+                transcribedTextElement.style.display = 'block';
+                voiceStatus.style.display = 'none';
+                
+                if (currentField) {
+                    currentField.value = transcript;
+                    currentField = null;
+                } else {
+                    processNaturalVoiceInput(transcript);
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                voiceStatus.textContent = `حدث خطأ: ${error.message}`;
+                voiceStatus.style.display = 'block';
+                transcribedTextElement.style.display = 'none';
+            }
+        }
+        
+        function processNaturalVoiceInput(transcript) {
+            const parts = transcript.split(/جدول|قائمة|جدول قائمة/);
+            const content = parts.length > 1 ? parts[1].trim() : transcript;
+
+            let title = '';
+            let headers = [];
+            let rows = [];
+
+            const sentences = content.split(/[،،,.\n]/).map(s => s.trim()).filter(s => s.length > 0);
+            
+            let firstSentenceIsTitle = false;
+            if (sentences.length > 0) {
+                const firstPart = sentences[0].split(/\s*الاسم\s*|\s*العنوان\s*/)[0];
+                if (firstPart.length > 0 && firstPart.split(/\s+/).length <= 4) {
+                    title = firstPart;
+                    firstSentenceIsTitle = true;
+                }
+            }
+
+            let startFromIndex = firstSentenceIsTitle ? 1 : 0;
+            
+            // Extract headers
+            if (sentences.length > startFromIndex) {
+                headers = sentences[startFromIndex].split(/،|و|\s*و\s*|،\s*و\s*|و\s*،\s*/).map(h => h.trim()).filter(h => h.length > 0);
+                if (headers.length > 1) {
+                    startFromIndex++;
+                } else {
+                    headers = [];
+                }
+            }
+
+            // Extract rows
+            for (let i = startFromIndex; i < sentences.length; i++) {
+                const rowData = sentences[i].split(/،|و|\s*و\s*|،\s*و\s*|و\s*،\s*/).map(d => d.trim()).filter(d => d.length > 0);
+                if (rowData.length > 0) {
+                    rows.push(rowData);
+                }
+            }
+            
+            // Fill form with recognized data
+            if (title) {
+                document.getElementById('tableTitleInput').value = title;
+            }
+            if (headers.length > 0) {
+                const columnCountSelect = document.getElementById('columnCountSelect');
+                columnCountSelect.value = headers.length;
+                generateColumnHeaders();
+                headers.forEach((header, index) => {
+                    document.querySelectorAll('.column-header')[index].value = header;
+                });
+            }
+            
+            dataEntryForm.innerHTML = '';
+            rows.forEach(rowData => {
+                const newRow = document.createElement('div');
+                newRow.classList.add('input-with-button');
+                rowData.forEach((cellData, index) => {
+                    const fieldGroup = document.createElement('div');
+                    fieldGroup.classList.add('field-group');
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.classList.add('data-cell');
+                    input.value = cellData;
+                    input.placeholder = `بيانات ${index + 1}`;
+                    const voiceBtnField = document.createElement('button');
+                    voiceBtnField.classList.add('btn-field-voice');
+                    voiceBtnField.innerHTML = '<i class="fas fa-microphone"></i>';
+                    voiceBtnField.onclick = () => startFieldVoiceInput(input);
+                    
+                    fieldGroup.appendChild(input);
+                    fieldGroup.appendChild(voiceBtnField);
+                    newRow.appendChild(fieldGroup);
+                });
+                const removeBtn = document.createElement('button');
+                removeBtn.classList.add('remove-btn');
+                removeBtn.innerHTML = '<i class="fas fa-minus"></i>';
+                removeBtn.onclick = () => removeRow(removeBtn);
+                newRow.appendChild(removeBtn);
+                dataEntryForm.appendChild(newRow);
+            });
+            const addBtn = document.createElement('button');
+            addBtn.classList.add('add-btn');
+            addBtn.innerHTML = '<i class="fas fa-plus"></i>';
+            addBtn.onclick = addRow;
+            dataEntryForm.appendChild(addBtn);
+        }
+        
+        // Initial setup
+        generateColumnHeaders();
+    </script>
+</body>
+</html>
